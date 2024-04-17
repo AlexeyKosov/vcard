@@ -225,24 +225,25 @@ class VCard
      * @param string $element The name of the element to set
      * @throws VCardException
      */
-    private function addMedia($property, $url, $element, $include = true)
+    private function addMedia($property, $url, $element, $include = true, $mimeType = null)
     {
-        $mimeType = null;
+        if ($mimeType === null) {
+            //Is this URL for a remote resource?
+            if (filter_var($url, FILTER_VALIDATE_URL) !== false) {
+                $headers = get_headers($url, 1);
 
-        //Is this URL for a remote resource?
-        if (filter_var($url, FILTER_VALIDATE_URL) !== false) {
-            $headers = get_headers($url, 1);
-
-            if (array_key_exists('Content-Type', $headers)) {
-                $mimeType = $headers['Content-Type'];
-                if (is_array($mimeType)) {
-                    $mimeType = end($mimeType);
+                if (array_key_exists('Content-Type', $headers)) {
+                    $mimeType = $headers['Content-Type'];
+                    if (is_array($mimeType)) {
+                        $mimeType = end($mimeType);
+                    }
                 }
+            } else {
+                //Local file, so inspect it directly
+                $mimeType = mime_content_type($url);
             }
-        } else {
-            //Local file, so inspect it directly
-            $mimeType = mime_content_type($url);
         }
+
         if (strpos($mimeType, ';') !== false) {
             $mimeType = strstr($mimeType, ';', true);
         }
@@ -427,15 +428,17 @@ class VCard
      *
      * @param  string $url image url or filename
      * @param  bool $include Include the image in our vcard?
+     * @param  string $mimeType Mime type of the logo, e.g. "image/jpeg"
      * @return $this
      */
-    public function addLogo($url, $include = true)
+    public function addLogo($url, $include = true, $mimeType = null)
     {
         $this->addMedia(
             'LOGO',
             $url,
             'logo',
-            $include
+            $include,
+            $mimeType
         );
 
         return $this;
@@ -463,15 +466,17 @@ class VCard
      *
      * @param  string $url image url or filename
      * @param  bool $include Include the image in our vcard?
+     * @param  string $mimeType Mime type of the photo, e.g. "image/jpeg"
      * @return $this
      */
-    public function addPhoto($url, $include = true)
+    public function addPhoto($url, $include = true, $mimeType = null)
     {
         $this->addMedia(
             'PHOTO',
             $url,
             'photo',
-            $include
+            $include,
+            $mimeType
         );
 
         return $this;
